@@ -1,2 +1,0 @@
-# Sportmodules
-Wiskunde D opdracht
