@@ -59,4 +59,4 @@ with open("keuzes.txt") as keuzes_bestand:
     
     
 for sport in sporten:
-    print(sport.naam)
+    print(f"{sport.naam} heeft een maximale capaciteit van {sport.max_cap}")
