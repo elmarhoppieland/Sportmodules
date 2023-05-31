@@ -43,13 +43,20 @@ class Leerling:
 
 # Lees alle sporten
 with open("keuzes.txt") as keuzes_bestand:
-    remover = []
     sporten = list(keuzes_bestand.readline().removeprefix("De sporten: ").removesuffix(" \n").split(", "))
+    n_sporten = len(sporten)
+    remover = []
+    n = 0
     for sport in sporten:
+        if n == n_sporten:
+            sporten = list(set(sporten) - set(remover))
+            break
         max_cap = cap_req(naam=sport, min=1)
         sport_object = Sport(sport, max_cap)
         sporten.append(sport_object)
         remover.append(sport)
-    sporten = list(set(sporten) - set(remover))
+        n += 1
     
-
+    
+for sport in sporten:
+    print(sport.naam)
