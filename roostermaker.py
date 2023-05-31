@@ -21,7 +21,7 @@ def cap_req(naam, min=float('-inf'), max=float('inf')):
 class Sport:
     def __init__(self, naam, max_cap, populariteit=0, leerlingen=[]):
         self.naam = naam
-        self. max_cap = max_cap
+        self.max_cap = max_cap
         self.leerlingen = leerlingen
         self.populariteit = populariteit
 
