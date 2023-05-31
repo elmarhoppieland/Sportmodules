@@ -34,7 +34,13 @@ gewichten = []
 # Vraag per sport om de naam en de populariteit
 for n in range(aantal_sporten):
     n += 1
-    sporten.append(str(input(f"Hoe heet sport nummer {n}? ")))
+    while True:
+        sport= str(input(f"Hoe heet sport nummer {n}? "))
+        if ", " in sport:
+            print(f"de naam mag niet \", \" (met een spatie) bevatten.")
+        else:
+            sporten.append(sport)
+            break
     while True:
         try:
             populariteit = float((input(f"Wat is de populariteit van {sporten[n-1]}? ")))
@@ -53,17 +59,20 @@ keuze_lijst = open("keuzes.txt", "a")
 # Leeg het bestand
 keuze_lijst.truncate(0)
 
+# Schrijf alle sporten op
+vertaling_tabel = str.maketrans("", "", "[]'")
+sporten_txt = str(sporten).translate(vertaling_tabel)
+keuze_lijst.write(f"De sporten: {sporten_txt} \n" )
 
 # Maak en schrijf de keuzes in het bestand
 for n in range(aantal_leerlingen):
     n += 1
     keuzes_leerling = []
+
     while len(keuzes_leerling) < aantal_keuzes:
         keuze = choices(sporten, gewichten)
         if keuze not in keuzes_leerling:
             keuzes_leerling.append(keuze)
-    vertaling_tabel = str.maketrans("", "", "[]'")
+
     keuzes_string = str(keuzes_leerling).translate(vertaling_tabel)
     keuze_lijst.write(str(n) + ", " + keuzes_string + "\n")
-    
-quit()

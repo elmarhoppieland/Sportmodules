@@ -4,7 +4,7 @@ class Leerling:
         self.keuze_1 = keuze_1
         self.keuze_2 = keuze_2
         self.keuze_3 = keuze_3
-        self.plek = None
+        self.plek = plek
     def bereken_score_leerling(self):
         if self.plek == self.keuze_1:
             return 0
