@@ -17,12 +17,14 @@ def cap_req(naam, min=float('-inf'), max=float('inf')):
             print("")
     return aantal
 
+
 class Sport:
     def __init__(self, naam, max_cap, populariteit=0, leerlingen=[]):
         self.naam = naam
         self. max_cap = max_cap
         self.leerlingen = leerlingen
         self.populariteit = populariteit
+
 
 class Leerling:
     def __init__(self, naam: int, keuze_1, keuze_2, keuze_3, plek=None):
@@ -40,6 +42,7 @@ class Leerling:
             return 2
         else:
             return 10
+
 
 # Lees alle sporten
 with open("keuzes.txt") as keuzes_bestand:
