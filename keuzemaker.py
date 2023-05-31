@@ -2,7 +2,7 @@
 from random import *
 
 
-# Defineer een functie die vraagt om een naam en een geheel getal met een optioneel minimum 
+# Definieer een functie die vraagt om een naam en een geheel getal met een optioneel minimum
 def int_input(naam, min=float('-inf'), max=float('inf')):
     while True:
         aantal = input(f"Hoeveel verschillende {naam} zijn er? ")
@@ -27,7 +27,7 @@ aantal_sporten = int_input("sporten", min=1)
 aantal_keuzes = int_input("keuzes", max=aantal_sporten)
 aantal_leerlingen = int_input("leerlingen", min=1)
 
-# Defineer de lijsten "sporten" en "gewichten"
+# Definieer de lijsten "sporten" en "gewichten"
 sporten = []
 gewichten = []
 
