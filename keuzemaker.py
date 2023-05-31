@@ -38,6 +38,8 @@ for n in range(aantal_sporten):
         sport= str(input(f"Hoe heet sport nummer {n}? "))
         if ", " in sport:
             print(f"de naam mag niet \", \" (met een spatie) bevatten.")
+            elif sport in sporten:
+                print(f"Er is al een sport die {sport} heet, probeer het nog een keer.")
         else:
             sporten.append(sport)
             break
