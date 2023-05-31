@@ -59,7 +59,6 @@ with open("keuzes.txt") as keuzes_bestand:
         sporten.append(sport_object)
         remover.append(sport)
         n += 1
-    
-    
+     
 for sport in sporten:
     print(f"{sport.naam} heeft een maximale capaciteit van {sport.max_cap}")
