@@ -27,22 +27,10 @@ class Sport:
 
 
 class Leerling:
-    def __init__(self, naam: int, keuze_1, keuze_2, keuze_3, plek=None):
+    def __init__(self, naam: int, keuzes, plek=None):
         self.naam = naam
-        self.keuze_1 = keuze_1
-        self.keuze_2 = keuze_2
-        self.keuze_3 = keuze_3
+        self.keuzes = keuzes
         self.plek = plek
-    def bereken_score_leerling(self):
-        if self.plek == self.keuze_1:
-            return 0
-        elif self.plek == self.keuze_2:
-            return 1
-        elif self.plek == self.keuze_3:
-            return 2
-        else:
-            return 10
-
 
 # Lees alle sporten
 with open("keuzes.txt") as keuzes_bestand:
@@ -59,6 +47,28 @@ with open("keuzes.txt") as keuzes_bestand:
         sporten.append(sport_object)
         remover.append(sport)
         n += 1
-     
+
+# Bereken de max capaciteit van alle sporten
+tot_cap = 0
 for sport in sporten:
-    print(f"{sport.naam} heeft een maximale capaciteit van {sport.max_cap}")
+    tot_cap += sport.max_cap
+
+# Lees de leerlingen
+with open("keuzes.txt") as keuzes_bestand:
+    n_leerlingen = 0
+    leerlingen = []
+    next(keuzes_bestand)
+    for regel in keuzes_bestand:
+        if regel != "\n":
+            n_leerlingen += 1
+            leerling = regel.split(", ")
+            leerling = list(map(lambda s: s.strip(), leerling))
+            leerling = Leerling(leerling[0], list(leerling[1:]))
+            leerlingen.append(leerling)
+
+
+if n_leerlingen > tot_cap:
+    print(f"Er zijn {n_leerlingen} leerlingen, en een totale capaciteit van {tot_cap}, dit werkt niet :(")
+else:
+    for leerling in leerlingen:
+        print(f"{leerling.naam} heeft de keuzes: {leerling.keuzes}")
