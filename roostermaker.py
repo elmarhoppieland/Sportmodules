@@ -68,7 +68,8 @@ with open("keuzes.txt") as keuzes_bestand:
 
 
 if n_leerlingen > tot_cap:
-    print(f"Er zijn {n_leerlingen} leerlingen, en een totale capaciteit van {tot_cap}, dus dit werkt niet :(")
+    print(f"Er zijn {n_leerlingen} leerlingen, en een totale capaciteit van {tot_cap}, dus dit is niet mogelijk.")
 else:
     for leerling in leerlingen:
         print(f"{leerling.naam} heeft de keuzes: {leerling.keuzes}")
+
