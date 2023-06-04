@@ -64,7 +64,7 @@ keuze_lijst.truncate(0)
 # Schrijf alle sporten op
 vertaling_tabel = str.maketrans("", "", "[]'")
 sporten_txt = str(sporten).translate(vertaling_tabel)
-keuze_lijst.write(f"De sporten: {sporten_txt} \n" )
+keuze_lijst.write(f"De sporten: {sporten_txt}; aantal keuzes: {aantal_keuzes} \n" )
 
 # Maak en schrijf de keuzes in het bestand
 for n in range(aantal_leerlingen):

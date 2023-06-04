@@ -17,9 +17,12 @@ def cap_req(naam, min=float('-inf'), max=float('inf')):
             print("")
     return aantal
 
+def score_voor_n_keuze(x):
+    x = int(x)
+    return 0.3*x**2 + 2*x - 2.3
 
 class Sport:
-    def __init__(self, naam, max_cap, populariteit=0, leerlingen=[]):
+    def __init__(self, naam, max_cap, populariteit=0.0, leerlingen=[]):
         self.naam = naam
         self.max_cap = max_cap
         self.leerlingen = leerlingen
@@ -32,9 +35,11 @@ class Leerling:
         self.keuzes = keuzes
         self.plek = plek
 
+
 # Lees alle sporten
 with open("keuzes.txt") as keuzes_bestand:
-    sporten = list(keuzes_bestand.readline().removeprefix("De sporten: ").removesuffix(" \n").split(", "))
+    sporten, n_keuzes = list(keuzes_bestand.readline().removeprefix("De sporten: ").removesuffix(" \n").split("; aantal keuzes: "))
+    sporten = sporten.split(", ")
     n_sporten = len(sporten)
     remover = []
     n = 0
@@ -67,9 +72,15 @@ with open("keuzes.txt") as keuzes_bestand:
             leerlingen.append(leerling)
 
 
-if n_leerlingen > tot_cap:
-    print(f"Er zijn {n_leerlingen} leerlingen, en een totale capaciteit van {tot_cap}, dus dit is niet mogelijk.")
-else:
+# Bereken de populariteit van alle sporten
+max_score = score_voor_n_keuze(n_keuzes)
+for sport in sporten:
+    sport.populariteit = n_leerlingen * max_score
     for leerling in leerlingen:
-        print(f"{leerling.naam} heeft de keuzes: {leerling.keuzes}")
+        if sport.naam in leerling.keuzes:
+            nste_keuze = leerling.keuzes.index(sport.naam)
+            sport.populariteit -= abs(max_score - score_voor_n_keuze(nste_keuze))
+    sport.populariteit = round(sport.populariteit, 1)
+    print(f"Sport {sport.naam} heeft een populariteit van {sport.populariteit}")
 
+sporten.sort(key=lambda sport: sport.populariteit, reverse=True)
