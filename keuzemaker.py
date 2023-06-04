@@ -2,7 +2,7 @@
 from random import *
 
 
-# Definieer een functie die vraagt om een naam en een geheel getal met een optioneel minimum
+# Definieer een functie die vraagt om een naam en een geheel getal met een optioneel minimum en maximum
 def int_input(naam, min=float('-inf'), max=float('inf')):
     while True:
         aantal = input(f"Hoeveel verschillende {naam} zijn er? ")
