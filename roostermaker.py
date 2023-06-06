@@ -17,12 +17,15 @@ def cap_req(naam, min=float('-inf'), max=float('inf')):
             print("")
     return aantal
 
+def sorteer_sporen(sporten, reverse_true):
+    sporten.sort(key=lambda sport: max_cap/sport.populariteit, reverse=reverse_true)
+    
 def score_voor_n_keuze(x):
     x = int(x)
     return 0.3*x**2 + 2*x - 2.3
 
 class Sport:
-    def __init__(self, naam, max_cap, populariteit=0.0, leerlingen=[]):
+    def __init__(self, naam, max_cap, populariteit=0.0, leerlingen=[], queue=[]):
         self.naam = naam
         self.max_cap = max_cap
         self.leerlingen = leerlingen
@@ -81,6 +84,27 @@ for sport in sporten:
             nste_keuze = leerling.keuzes.index(sport.naam)
             sport.populariteit -= abs(max_score - score_voor_n_keuze(nste_keuze))
     sport.populariteit = round(sport.populariteit, 1)
-    print(f"Sport {sport.naam} heeft een populariteit van {sport.populariteit}")
 
-sporten.sort(key=lambda sport: sport.populariteit, reverse=True)
+sorteer_sporten(sporten, True)
+
+# Geef de leerlingen met maar 1 keuze extra keuzes.
+for leerling in leerlingen:
+    if len(leerling.keuzes) < n_keuzes:
+        for n in range(n_sporten):
+            if sporten[n].naam not in leerling.keuzes:
+                leerling.keuzes.append(sport.naam)
+            if len(leerling.keuzes) == n_keuzes:
+                break
+
+# Stop de leerlingen in de wachtrij van hun 1ste keuze
+for sport in sporten:
+    for leerling in leerlingen:
+        if sport.naam == leerling.keuzes[0]:
+            sport.queue.append(leerling)
+
+sorteer_sporten(sporten, False)
+
+# Sorteer de leerlingen in de queue gebaseerd op de populairiteit van hun 2e keuze
+for sport in sporten:
+    sport.queue.sort(key=lambda, sporten, sport.queue: sporten.index(sport.queue)
+    print(sport.queue)
