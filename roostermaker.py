@@ -106,5 +106,25 @@ sorteer_sporten(sporten, False)
 
 # Sorteer de leerlingen in de queue gebaseerd op de populairiteit van hun 2e keuze
 for sport in sporten:
-    sport.queue.sort(key=lambda, sporten, sport.queue: sporten.index(sport.queue)
-    print(sport.queue)
+    queue_objects = sport.queue
+    queue_namen_en_keuze = dict()
+    for leerling in queue_objects:
+        queue_namen_en_keuze[leerling.naam] = leerling.keuzes[1]
+        queue_keuze_index.append(sporten.index(leerling.keuzes[1]))
+    queue_namen = [queue_namen_en_keuze.keys() for _,queue_namen_en_keuze.values() in sorted(zip(queue_keuze_index,queue_namen_en_keuze.values()))]
+    nieuwe_queue = []
+    for n in range len(sport.queue):
+        for leerling in sport.queue:
+            if leerling.naam = queue_namen[n]:
+                nieuwe_queue.append(leerling)
+    sport.queue = nieuwe_queue
+    
+# Deel de leerlingen per sport in totdat deze vol zit 
+for sport in sporten:
+    while len(sport.leerlingen) < sport.max_cap:
+        sport.leerlingen.append(sport.queue[0])
+        sport.queue.remove(sport.leerlingen[-1])
+        
+for sport in sporten:
+    print(f"Sport naam: {sport.naam} doen {sport.leerlingen}")
+        
