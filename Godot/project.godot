@@ -17,6 +17,10 @@ config/custom_user_dir_name="Sportmodules"
 config/features=PackedStringArray("4.0", "Forward Plus")
 config/icon="res://icon.svg"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/autothread/plugin.cfg", "res://addons/AutoThread/plugin.cfg")
+
 [input]
 
 paste={
