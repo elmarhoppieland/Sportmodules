@@ -17,7 +17,7 @@ def cap_req(naam, min=float('-inf'), max=float('inf')):
             print("")
     return aantal
 
-def sorteer_sporen(sporten, reverse_true):
+def sorteer_sporten(sporten, reverse_true):
     sporten.sort(key=lambda sport: max_cap/sport.populariteit, reverse=reverse_true)
     
 def score_voor_n_keuze(x):
@@ -30,6 +30,7 @@ class Sport:
         self.max_cap = max_cap
         self.leerlingen = leerlingen
         self.populariteit = populariteit
+        self.queue = queue
 
 
 class Leerling:
@@ -44,6 +45,7 @@ with open("keuzes.txt") as keuzes_bestand:
     sporten, n_keuzes = list(keuzes_bestand.readline().removeprefix("De sporten: ").removesuffix(" \n").split("; aantal keuzes: "))
     sporten = sporten.split(", ")
     n_sporten = len(sporten)
+    n_keuzes = int(n_keuzes)
     remover = []
     n = 0
     for sport in sporten:
@@ -108,14 +110,18 @@ sorteer_sporten(sporten, False)
 for sport in sporten:
     queue_objects = sport.queue
     queue_namen_en_keuze = dict()
+    queue_namen_en_keuze_index = dict()
+    sporten_namen = []
+    for sport in sporten:
+        sporten_namen.append(sport.naam)
     for leerling in queue_objects:
         queue_namen_en_keuze[leerling.naam] = leerling.keuzes[1]
-        queue_keuze_index.append(sporten.index(leerling.keuzes[1]))
-    queue_namen = [queue_namen_en_keuze.keys() for _,queue_namen_en_keuze.values() in sorted(zip(queue_keuze_index,queue_namen_en_keuze.values()))]
+        queue_namen_en_keuze_index[leerling.naam] = sporten_namen.index(leerling.keuzes[1])
+    queue_namen = dict(sorted(queue_namen_en_keuze_index.items())).keys()
     nieuwe_queue = []
-    for n in range len(sport.queue):
+    for n in range(len(sport.queue)):
         for leerling in sport.queue:
-            if leerling.naam = queue_namen[n]:
+            if leerling.naam == list(queue_namen_en_keuze_index.keys())[n]:
                 nieuwe_queue.append(leerling)
     sport.queue = nieuwe_queue
     
@@ -126,5 +132,8 @@ for sport in sporten:
         sport.queue.remove(sport.leerlingen[-1])
         
 for sport in sporten:
-    print(f"Sport naam: {sport.naam} doen {sport.leerlingen}")
+    leerlingen_namen = []
+    for leerling in sport.leerlingen:
+        leerlingen_namen.append(leerling.naam)
+    print(f"Sport naam: {sport.naam} doen {leerlingen_namen}")
         
