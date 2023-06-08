@@ -1,6 +1,12 @@
-[gd_scene load_steps=2 format=3 uid="uid://x0bsg88ltgrw"]
+[gd_scene load_steps=4 format=3 uid="uid://x0bsg88ltgrw"]
 
 [ext_resource type="Script" path="res://Main.gd" id="1_onl7w"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_3f4hf"]
+font_size = 20
+
+[sub_resource type="LabelSettings" id="LabelSettings_v5xlb"]
+font_size = 20
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -38,30 +44,44 @@ columns = 3
 [node name="PanelContainer2" type="PanelContainer" parent="HSplitContainer"]
 layout_mode = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="HSplitContainer/PanelContainer2"]
+[node name="ScrollContainer" type="ScrollContainer" parent="HSplitContainer/PanelContainer2"]
 layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="MarginContainer" type="MarginContainer" parent="HSplitContainer/PanelContainer2/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 theme_override_constants/margin_left = 16
 theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 16
 
-[node name="VBoxContainer" type="VBoxContainer" parent="HSplitContainer/PanelContainer2/MarginContainer"]
+[node name="SideVBoxContainer" type="VBoxContainer" parent="HSplitContainer/PanelContainer2/ScrollContainer/MarginContainer"]
+unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Label" type="Label" parent="HSplitContainer/PanelContainer2/MarginContainer/VBoxContainer"]
+[node name="Label" type="Label" parent="HSplitContainer/PanelContainer2/ScrollContainer/MarginContainer/SideVBoxContainer"]
 layout_mode = 2
 text = "Genereer Roosters"
+label_settings = SubResource("LabelSettings_3f4hf")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="ClibboardButton" type="Button" parent="HSplitContainer/PanelContainer2/MarginContainer/VBoxContainer"]
+[node name="ClibboardButton" type="Button" parent="HSplitContainer/PanelContainer2/ScrollContainer/MarginContainer/SideVBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 4
 text = "Van Klembord..."
 
-[node name="Button2" type="Button" parent="HSplitContainer/PanelContainer2/MarginContainer/VBoxContainer"]
+[node name="HSeparator" type="HSeparator" parent="HSplitContainer/PanelContainer2/ScrollContainer/MarginContainer/SideVBoxContainer"]
 layout_mode = 2
-size_flags_horizontal = 4
-text = "Nog een optie of zo..."
 
-[connection signal="pressed" from="HSplitContainer/PanelContainer2/MarginContainer/VBoxContainer/ClibboardButton" to="." method="_on_clipboard_button_pressed"]
+[node name="CapaciteitLabel" type="Label" parent="HSplitContainer/PanelContainer2/ScrollContainer/MarginContainer/SideVBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Capaciteit modules"
+label_settings = SubResource("LabelSettings_v5xlb")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[connection signal="pressed" from="HSplitContainer/PanelContainer2/ScrollContainer/MarginContainer/SideVBoxContainer/ClibboardButton" to="." method="_on_clipboard_button_pressed"]

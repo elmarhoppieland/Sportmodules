@@ -9,6 +9,8 @@ const KEUZES_TXT_FILE := "user://keuzes-%s.txt"
 const AANTAL_PERIODES := 4
 # ==============================================================================
 @onready var _table_grid: GridContainer = %TableGrid
+@onready var capaciteit_label: Label = %CapaciteitLabel
+@onready var side_v_box_container: VBoxContainer = %SideVBoxContainer
 # ==============================================================================
 
 func _process(_delta: float) -> void:
@@ -100,8 +102,14 @@ func _load_table_from_clipboard() -> void:
 		var index := start_index
 		while not table.get_cell(index, 0).is_empty():
 			sporten.append(table.get_cell(index, 0))
+			var capaciteit_enter_node := preload("res://ModuleCapaciteitEnter.tscn").instantiate()
+			capaciteit_enter_node.naam = table.get_cell(index, 0)
+			capaciteit_label.add_sibling(capaciteit_enter_node)
 			index += 1
 			start_index += 1
+		
+		for capaciteit_enter_node in side_v_box_container.get_children().filter(func(a): return a is ModuleCapaciteitEnter) as Array[ModuleCapaciteitEnter]:
+			capaciteit_enter_node.aantal = int((table.height() - 2) / (sporten.size() / 1.3))
 		
 		start_index += 1
 		
@@ -125,6 +133,26 @@ func _load_table_from_clipboard() -> void:
 			
 			leerlingen.append(leerling)
 		
+		if periode == 0:
+			var indeling := RoosterMaker.dijkstra(RoosterMaker.get_student_array(leerlingen, sporten), [24, 24, 24, 24, 24])
+			
+			var score := 0
+			for module_idx in indeling.size():
+				var module := indeling[module_idx]
+				for leerling in module.leerlingen:
+					if module_idx in leerling.keuzes:
+						score += RoosterMaker.get_score(leerling.keuzes.find(module_idx))
+					else:
+						score += RoosterMaker.get_score(4)
+			print("Score: " + str(score))
+			
+			for module_idx in indeling.size():
+				var module := indeling[module_idx]
+				var keuzes: Array[PackedInt32Array] = []
+				for leerling in module.leerlingen:
+					keuzes.append(leerling.keuzes)
+				print("Module %s heeft %s leerlingen: %s" % [module_idx, module.size(), keuzes])
+		
 		var file := FileAccess.open(KEUZES_TXT_FILE % periode, FileAccess.WRITE)
 		file.store_line("De sporten: %s " % ", ".join(sporten))
 		for leerling in leerlingen:
@@ -135,25 +163,15 @@ func _on_clipboard_button_pressed() -> void:
 	if not is_excel_copied(true):
 		return
 	
-	var time := Time.get_ticks_usec()
-	print("Loading the table from clipboard...")
+#	var thread := AutoThread.new(self)
+#	thread.start_execution(_load_table_from_clipboard)
+	_load_table_from_clipboard()
 	
-	var thread := AutoThread.new(self)
-	thread.start_execution(_load_table_from_clipboard)
+#	await thread.finished
 	
-	await thread.finished
+	show_table(clipboard_get_table())
 	
-	print("Finished loading after %s seconds." % ((Time.get_ticks_usec() - time) / 1e6))
-	time = Time.get_ticks_usec()
-	
-	print("Loading the table from the clipboard...")
-	
-	thread.start_execution(clipboard_get_table)
-	thread.finished.connect(func(table: Table):
-		print("Finished loading after %s seconds." % ((Time.get_ticks_usec() - time) / 1e6))
-		time = Time.get_ticks_usec()
-		
-		print("Showing the table...")
-		show_table(table)
-		print("Finished showing after %s seconds. " % ((Time.get_ticks_usec() - time) / 1e6))
-	)
+#	thread.start_execution(clipboard_get_table)
+#	thread.finished.connect(func(table: Table):
+#		show_table(table)
+#	)
