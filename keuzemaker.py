@@ -38,6 +38,8 @@ for n in range(aantal_sporten):
         sport= str(input(f"Hoe heet sport nummer {n}? "))
         if ", " in sport:
             print(f"de naam mag niet \", \" (met een spatie) bevatten.")
+        elif sport == "":
+            print("Voer een naam in.")
         elif sport in sporten:
             print(f"Er is al een sport die \"{sport}\" heet, probeer het nog een keer.")
         else:
@@ -46,6 +48,7 @@ for n in range(aantal_sporten):
     while True:
         try:
             populariteit = float((input(f"Wat is de populariteit van {sporten[n-1]}? ")))
+            populariteit = int(populariteit)
             if populariteit <= 0:
                 print("Voer een getal in groter dan 0.")
                 continue
