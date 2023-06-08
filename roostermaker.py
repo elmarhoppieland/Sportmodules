@@ -18,7 +18,7 @@ def cap_req(naam, min=float('-inf'), max=float('inf')):
     return aantal
 
 def sorteer_sporten(sporten, reverse_true):
-    sporten.sort(key=lambda sport: max_cap/sport.populariteit, reverse=reverse_true)
+    sporten.sort(key=lambda sport: (max_cap-len(leerlingen)/sport.populariteit, reverse=reverse_true)
     
 def score_voor_n_keuze(x):
     x = int(x)
