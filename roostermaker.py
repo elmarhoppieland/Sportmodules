@@ -112,8 +112,8 @@ for sport in sporten:
     queue_namen_en_keuze = dict()
     queue_namen_en_keuze_index = dict()
     sporten_namen = []
-    for sport in sporten:
-        sporten_namen.append(sport.naam)
+    for sport_2 in sporten:
+        sporten_namen.append(sport_2.naam)
     for leerling in queue_objects:
         queue_namen_en_keuze[leerling.naam] = leerling.keuzes[1]
         queue_namen_en_keuze_index[leerling.naam] = sporten_namen.index(leerling.keuzes[1])
@@ -129,7 +129,7 @@ for sport in sporten:
 for sport in sporten:
     while len(sport.leerlingen) < sport.max_cap:
         sport.leerlingen.append(sport.queue[0])
-        sport.queue.remove(sport.leerlingen[-1])
+        sport.queue.pop[0]
         
 for sport in sporten:
     leerlingen_namen = []
