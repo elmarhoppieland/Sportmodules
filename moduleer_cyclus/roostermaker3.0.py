@@ -34,10 +34,10 @@ class Sport:
 
 
 class Leerling:
-    def __init__(self, naam: int, keuzes, plek=None):
+    def __init__(self, naam, keuzes):
         self.naam = naam
         self.keuzes = keuzes
-        self.plek = plek
+
 
 
 # Lees alle sporten
