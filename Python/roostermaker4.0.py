@@ -1,6 +1,6 @@
 # state = totale indeling
 class Node():
-    def __init__(self, state=list):
+    def __init__(self, state):
         self.state = state
             
 
@@ -19,10 +19,9 @@ class Dijkstrafrontier():
 
             
 class Sport:
-    def __init__(self, naam, max_cap, leerlingen=[]):
+    def __init__(self, naam, max_cap):
         self.naam = naam
         self.max_cap = max_cap
-        self.leerlingen = leerlingen
         
         
 class Leerling:
@@ -50,7 +49,7 @@ def cap_req(naam, min=float('-inf'), max=float('inf')):
             print("")
     return aantal
 
-    
+
 def score_voor_n_keuze(x):
     x = int(x)
     return 0.3*(x+1)**2 + 2*(x+1) - 2.3
@@ -59,6 +58,7 @@ def print_resultaat(node):
     print(node.state)
     quit()
 
+    
 # Lees de sporten en de leerlingen       
 with open("/home/merlijn/Desktop/GitHub/Sportmodules/Python/keuzes.txt") as f:
     sporten = []
@@ -77,8 +77,8 @@ with open("/home/merlijn/Desktop/GitHub/Sportmodules/Python/keuzes.txt") as f:
             leerling = Leerling(leerling[0], list(leerling[1:]))
             leerlingen.append(leerling)
         
-
-start = Node(list([0]))        
+lijst = list([0])
+start = Node(lijst)        
 frontier = Dijkstrafrontier()
 frontier.add(start)
 
