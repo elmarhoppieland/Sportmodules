@@ -1,6 +1,6 @@
 # state = totale indeling
 class Node():
-    def __init__(self, state):
+    def __init__(self, state=list):
         self.state = state
             
 
@@ -78,7 +78,7 @@ with open("/home/merlijn/Desktop/GitHub/Sportmodules/Python/keuzes.txt") as f:
             leerlingen.append(leerling)
         
 
-start = Node(state=[0])        
+start = Node(list([0]))        
 frontier = Dijkstrafrontier()
 frontier.add(start)
 
@@ -98,5 +98,5 @@ while True:
         if sport.naam in leerling.keuzes:
             child.state[0] += score_voor_n_keuze(leerling.keuzes.index(sport.naam))
         else:
-            child.score += score_voor_n_keuze(n_keuzes + 1)
+            child.state[0] += score_voor_n_keuze(n_keuzes + 1)
         frontier.add(child)
