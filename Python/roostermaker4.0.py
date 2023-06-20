@@ -15,7 +15,7 @@ class Dijkstrafrontier():
         self.frontier.append(node)
     
     def remove(self):
-        self.frontier.sort(key=lambda node: node.score)
+        self.frontier.sort(key=lambda node: node.score - len(node.indeling))
         node = self.frontier[0]
         self.frontier = self.frontier[1:]
         return node
@@ -59,7 +59,9 @@ def score_voor_n_keuze(x):
     return 0.3*(x+1)**2 + 2*(x+1) - 2.3
     
 def print_resultaat(node):
-    print(node.indeling)
+    for n in range(len(node.indeling)):
+        leerling = leerlingen[n]
+        print(f"{leerling.naam} heeft de sport {node.indeling[n]}")
     quit()
 
     
@@ -81,6 +83,22 @@ with open("/home/merlijn/Desktop/GitHub/Sportmodules/Python/keuzes.txt") as f:
             leerling = Leerling(leerling[0], list(leerling[1:]))
             leerlingen.append(leerling)
         
+# Check of er genoeg capaciteit is
+tot_cap = 0
+for sport in sporten:
+    tot_cap += sport.max_cap
+if tot_cap < len(leerlingen):
+    print("Er is niet genoeg capaciteit...")
+    quit()
+
+# Geef de leerlingen met maar 1 keuze extra keuzes.
+for leerling in leerlingen:
+    if len(leerling.keuzes) < n_keuzes:
+        for n in range(n_sporten):
+            if sporten[n].naam not in leerling.keuzes:
+                leerling.keuzes.append(sport.naam)
+            if len(leerling.keuzes) == n_keuzes:
+                break
 
 start = Node([], 0, sporten)        
 frontier = Dijkstrafrontier()
