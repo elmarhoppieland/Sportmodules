@@ -12,7 +12,6 @@ var root: TreeDijkstraPoint :
 		return root
 
 var _no_getters := false
-var point_count := 0
 # ==============================================================================
 signal finished_cleanup()
 # ==============================================================================
@@ -66,18 +65,6 @@ func _get_next_point() -> TreeDijkstraPoint:
 
 func add_point(point: TreeDijkstraPoint, parent: TreeDijkstraPoint) -> void:
 	parent.add_child(point)
-	point_count += 1
-	if point_count % 1000 == 0:
-		print("Point Count: %s" % point_count)
-	
-	# debug
-	
-	for child in parent.get_children() as Array[TreeDijkstraPoint]:
-		if child.is_disabled():
-			push_error("Invalid parent")
-	
-	if point.get_meta("student") != parent.get_meta("student") + 1:
-		push_error("Invalid student #")
 
 
 func _create_new_points(origin: TreeDijkstraPoint) -> void:

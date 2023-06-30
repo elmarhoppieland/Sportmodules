@@ -45,13 +45,14 @@ func _create_new_points(origin: TreeDijkstraPoint) -> void:
 		push_error("Attempted to create new points from a used origin.")
 		return
 	
+	var student_idx: int = origin.get_meta("student") + 1
+	var student := students[student_idx]
+	
 	for module_idx in module_caps.size():
 		if origin.get_meta("module_sizes")[module_idx] >= module_caps[module_idx]:
 			continue
 		
 		var point := TreeDijkstraPoint.new()
-		var student_idx: int = origin.get_meta("student") + 1
-		var student := students[student_idx]
 		
 		point.score = student.get_score(module_idx, module_caps.size() - 1)
 		

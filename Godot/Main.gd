@@ -164,53 +164,56 @@ func _on_clipboard_button_pressed() -> void:
 
 
 func _on_genereer_button_pressed() -> void:
-#	var thread := AutoThread.new(self)
+	var thread := AutoThread.new(self)
 	var indelingen: Array[Dijkstra.Indeling] = []
-#	thread.start_execution(func():
-#		LoadingScreen.start(sporten_list.size(), "Indeling genereren voor periode 1...")
+	thread.start_execution(func():
+		LoadingScreen.start(sporten_list.size(), "Indeling genereren voor periode 1...")
 		
-	var capaciteiten: Array[PackedInt32Array] = []
-	
-	var sport_index := 0
-	for periode in sporten_list.size():
-		capaciteiten.append(PackedInt32Array())
-		for i in sporten_list[periode].size():
-			capaciteiten[-1].append(capaciteit_enter_nodes[sport_index].aantal)
-			sport_index += 1
-	
-	for periode in sporten_list.size():
-		var module_caps := capaciteiten[periode]
-		print("Sporten: %s" % [sporten_list[periode]])
-		print("Caps: %s" % module_caps)
+		var capaciteiten: Array[PackedInt32Array] = []
 		
-		var students := Dijkstra.get_student_array(leerlingen[periode], sporten_list[periode])
-		var indeling := dijkstra.run_algorithm(students, module_caps)
+		var sport_index := 0
+		for periode in sporten_list.size():
+			capaciteiten.append(PackedInt32Array())
+			for i in sporten_list[periode].size():
+				capaciteiten[-1].append(capaciteit_enter_nodes[sport_index].aantal)
+				sport_index += 1
 		
-		var score := 0
-		for module_idx in indeling.size():
-			var module := indeling.modules[module_idx]
-			for leerling in module.leerlingen:
-				score += leerling.get_score(module_idx, module_caps.size())
-		
-		print("Score: " + str(score))
-		
-		for module_idx in indeling.size():
-			var module := indeling.modules[module_idx]
-			var keuzes: Array[PackedInt32Array] = []
-			for leerling in module.leerlingen:
-				keuzes.append(leerling.choices)
+		for periode in sporten_list.size():
+			var module_caps := capaciteiten[periode]
+			print("Sporten: %s" % [sporten_list[periode]])
+			print("Caps: %s" % module_caps)
 			
-			print("Module %s heeft %s leerlingen: %s" % [module_idx, module.size(), keuzes])
-		
-		indelingen.append(indeling)
-		
-		await dijkstra.finished_cleanup
-		
-#		LoadingScreen.progress_increment()
-#		LoadingScreen.set_message("Indeling genereren voor periode %s..." % (periode + 2))
-#	)
+			var students := Dijkstra.get_student_array(leerlingen[periode], sporten_list[periode])
+			seed(0) # make sure shuffle() always does the same
+			students.shuffle()
+			var indeling := dijkstra.run_algorithm(students, module_caps)
+			
+			var score := 0
+			for module_idx in indeling.size():
+				var module := indeling.modules[module_idx]
+				module.leerlingen.sort_custom(func(a: Dijkstra.Student, b: Dijkstra.Student):
+					return a.achternaam < b.achternaam
+				)
+				for leerling in module.leerlingen:
+					score += leerling.get_score(module_idx, module_caps.size())
+			
+			print("Score: " + str(score))
+			
+			for module_idx in indeling.size():
+				var module := indeling.modules[module_idx]
+				var keuzes: Array[PackedInt32Array] = []
+				for leerling in module.leerlingen:
+					keuzes.append(leerling.choices)
+				
+				print("Module %s heeft %s leerlingen: %s" % [module_idx, module.size(), keuzes])
+			
+			indelingen.append(indeling)
+			
+			LoadingScreen.progress_increment()
+			LoadingScreen.set_message("Indeling genereren voor periode %s..." % (periode + 2))
+	)
 	
-#	await thread.finished
+	await thread.finished
 	
 	_load_table_from_indelingen(indelingen)
 
