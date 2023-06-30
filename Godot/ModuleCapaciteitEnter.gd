@@ -19,6 +19,12 @@ class_name ModuleCapaciteitEnter
 				line_edit.clear()
 			else:
 				line_edit.text = str(value)
+	get:
+		if not line_edit:
+			return aantal
+		if line_edit.text.is_empty():
+			return 10 ** 3
+		return line_edit.text.to_int()
 # ==============================================================================
 @onready var label: Label = %Label
 @onready var line_edit: LineEdit = %LineEdit

@@ -8,9 +8,14 @@ const KEUZES_TXT_FILE := "user://keuzes-%s.txt"
 
 const AANTAL_PERIODES := 4
 # ==============================================================================
+var capaciteit_enter_nodes: Array[ModuleCapaciteitEnter] = []
+var sporten_list: Array[PackedStringArray] = []
+var leerlingen := {}
+# ==============================================================================
 @onready var _table_grid: GridContainer = %TableGrid
 @onready var capaciteit_label: Label = %CapaciteitLabel
 @onready var side_v_box_container: VBoxContainer = %SideVBoxContainer
+@onready var dijkstra := %Dijkstra as Dijkstra
 # ==============================================================================
 
 func _process(_delta: float) -> void:
@@ -29,7 +34,7 @@ func show_table(table: Table) -> void:
 	for row in table.rows():
 		for column in row:
 			var item := TableItem.instantiate()
-			item.text = column
+			item.text = str(column)
 			if not column.is_empty():
 				item.name = column
 			_table_grid.add_child(item)
@@ -74,8 +79,6 @@ func is_excel_copied(allow_incompatible: bool = false) -> bool:
 	var clipboard := DisplayServer.clipboard_get().trim_suffix("\r\n")
 	var table_size := Vector2i.ZERO
 	if not allow_incompatible:
-		if not "\r\n" in clipboard:
-			return false
 		if not clipboard.match(MATCH_CHECK):
 			return false
 	for line in clipboard.split("\r\n"):
@@ -94,26 +97,36 @@ func _load_table_from_clipboard() -> void:
 	for child in _table_grid.get_children():
 		child.queue_free()
 	
-	var table := clipboard_get_table(true)
+	var table := clipboard_get_table()
+	
+	side_v_box_container.propagate_call("show")
 	
 	var start_index := 3
+	var offset := 3
 	for periode in AANTAL_PERIODES:
+		offset = start_index
 		var sporten: PackedStringArray = []
 		var index := start_index
 		while not table.get_cell(index, 0).is_empty():
 			sporten.append(table.get_cell(index, 0))
 			var capaciteit_enter_node := preload("res://ModuleCapaciteitEnter.tscn").instantiate()
 			capaciteit_enter_node.naam = table.get_cell(index, 0)
-			capaciteit_label.add_sibling(capaciteit_enter_node)
+			if capaciteit_enter_nodes.is_empty():
+				capaciteit_label.add_sibling(capaciteit_enter_node)
+			else:
+				capaciteit_enter_nodes[-1].add_sibling(capaciteit_enter_node)
+			capaciteit_enter_nodes.append(capaciteit_enter_node)
 			index += 1
 			start_index += 1
 		
-		for capaciteit_enter_node in side_v_box_container.get_children().filter(func(a): return a is ModuleCapaciteitEnter) as Array[ModuleCapaciteitEnter]:
-			capaciteit_enter_node.aantal = int((table.height() - 2) / (sporten.size() / 1.3))
+		sporten_list.append(sporten)
+		
+		for capaciteit_enter_node in capaciteit_enter_nodes:
+			capaciteit_enter_node.aantal = int((table.height() - 2) * 1.3 / sporten.size())
 		
 		start_index += 1
 		
-		var leerlingen: Array[Leerling] = []
+		leerlingen[periode] = [] as Array[Leerling]
 		
 		for row_index in range(2, table.height()):
 			var row := table.get_row(row_index)
@@ -124,54 +137,116 @@ func _load_table_from_clipboard() -> void:
 			var leerling := Leerling.new([], row[0], row[1], row[2])
 			
 			for sport_index in sporten.size():
-				var value: int = row[3 + sport_index].to_int()
+				var value: int = row[sport_index + offset].to_int()
 				if value > 0:
 					while leerling.choices.size() < value:
 						leerling.choices.append("")
 					
 					leerling.choices[value - 1] = sporten[sport_index]
 			
-			leerlingen.append(leerling)
+			leerlingen[periode].append(leerling)
 		
-		if periode == 0:
-			var indeling := RoosterMaker.dijkstra(RoosterMaker.get_student_array(leerlingen, sporten), [24, 24, 24, 24, 24])
-			
-			var score := 0
-			for module_idx in indeling.size():
-				var module := indeling[module_idx]
-				for leerling in module.leerlingen:
-					if module_idx in leerling.keuzes:
-						score += RoosterMaker.get_score(leerling.keuzes.find(module_idx))
-					else:
-						score += RoosterMaker.get_score(4)
-			print("Score: " + str(score))
-			
-			for module_idx in indeling.size():
-				var module := indeling[module_idx]
-				var keuzes: Array[PackedInt32Array] = []
-				for leerling in module.leerlingen:
-					keuzes.append(leerling.keuzes)
-				print("Module %s heeft %s leerlingen: %s" % [module_idx, module.size(), keuzes])
+#		var file := FileAccess.open(KEUZES_TXT_FILE % periode, FileAccess.WRITE)
+#		file.store_line("De sporten: %s " % ", ".join(sporten))
+#		for leerling in leerlingen[periode]:
+#			file.store_line("%s, %s" % [leerling.achternaam, ", ".join(leerling.choices)])
 		
-		var file := FileAccess.open(KEUZES_TXT_FILE % periode, FileAccess.WRITE)
-		file.store_line("De sporten: %s " % ", ".join(sporten))
-		for leerling in leerlingen:
-			file.store_line("%s, %s" % [leerling.achternaam, ", ".join(leerling.choices)])
+		offset += sporten.size() + 1
 
 
 func _on_clipboard_button_pressed() -> void:
 	if not is_excel_copied(true):
 		return
 	
-#	var thread := AutoThread.new(self)
-#	thread.start_execution(_load_table_from_clipboard)
 	_load_table_from_clipboard()
+	
+	show_table(clipboard_get_table())
+
+
+func _on_genereer_button_pressed() -> void:
+#	var thread := AutoThread.new(self)
+	var indelingen: Array[Dijkstra.Indeling] = []
+#	thread.start_execution(func():
+#		LoadingScreen.start(sporten_list.size(), "Indeling genereren voor periode 1...")
+		
+	var capaciteiten: Array[PackedInt32Array] = []
+	
+	var sport_index := 0
+	for periode in sporten_list.size():
+		capaciteiten.append(PackedInt32Array())
+		for i in sporten_list[periode].size():
+			capaciteiten[-1].append(capaciteit_enter_nodes[sport_index].aantal)
+			sport_index += 1
+	
+	for periode in sporten_list.size():
+		var module_caps := capaciteiten[periode]
+		print("Sporten: %s" % [sporten_list[periode]])
+		print("Caps: %s" % module_caps)
+		
+		var students := Dijkstra.get_student_array(leerlingen[periode], sporten_list[periode])
+		var indeling := dijkstra.run_algorithm(students, module_caps)
+		
+		var score := 0
+		for module_idx in indeling.size():
+			var module := indeling.modules[module_idx]
+			for leerling in module.leerlingen:
+				score += leerling.get_score(module_idx, module_caps.size())
+		
+		print("Score: " + str(score))
+		
+		for module_idx in indeling.size():
+			var module := indeling.modules[module_idx]
+			var keuzes: Array[PackedInt32Array] = []
+			for leerling in module.leerlingen:
+				keuzes.append(leerling.choices)
+			
+			print("Module %s heeft %s leerlingen: %s" % [module_idx, module.size(), keuzes])
+		
+		indelingen.append(indeling)
+		
+		await dijkstra.finished_cleanup
+		
+#		LoadingScreen.progress_increment()
+#		LoadingScreen.set_message("Indeling genereren voor periode %s..." % (periode + 2))
+#	)
 	
 #	await thread.finished
 	
-	show_table(clipboard_get_table())
+	_load_table_from_indelingen(indelingen)
+
+
+func _load_table_from_indelingen(indelingen: Array[Dijkstra.Indeling]) -> void:
+	var table := Table.new()
 	
-#	thread.start_execution(clipboard_get_table)
-#	thread.finished.connect(func(table: Table):
-#		show_table(table)
-#	)
+	for child in _table_grid.get_children():
+		child.queue_free()
+	
+	var row := []
+	for periode in sporten_list.size():
+		for sport in sporten_list[periode]:
+			row.append(sport)
+	table.append_row(row, true)
+	
+	var leerling_index := 0
+	while true:
+		row = []
+		for indeling in indelingen:
+			for module in indeling.modules:
+				if module.size() > leerling_index:
+					var leerling := module.leerlingen[leerling_index]
+					row.append("%s - %s %s" % [leerling.klas, leerling.voornaam, leerling.achternaam])
+				else:
+					row.append("")
+			if row.all(func(a: String): return a.is_empty()):
+				var clipboard := ""
+				
+				for table_row in table.rows():
+					clipboard += "\t".join(table_row)
+					clipboard += "\r\n"
+				
+				DisplayServer.clipboard_set(clipboard)
+				
+				show_table(table)
+				return
+			table.append_row(row)
+		leerling_index += 1

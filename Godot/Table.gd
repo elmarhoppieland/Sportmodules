@@ -11,6 +11,21 @@ func _init(table: Array = []) -> void:
 	assign(table)
 
 
+func set_width(w: int) -> void:
+	if w == width():
+		return
+	
+	if w < width():
+		for row in rows():
+			row.resize(w)
+		return
+	if w > width():
+		for row in rows():
+			while row.size() < w:
+				row.append(null)
+		return
+
+
 ## Assigns elements of another table into the table. Resizes the table to match
 ## [code]table[/code]. Performs type conversions if the array is typed.
 func assign(table: Array) -> void:
@@ -30,9 +45,11 @@ func append_column(column: Array) -> void:
 
 
 ## Appends 1 row and the end of the table.
-func append_row(row: Array) -> void:
-	if row.size() != width():
+func append_row(row: Array, resize: bool = false) -> void:
+	if row.size() != width() and not resize:
 		return
+	if resize:
+		set_width(row.size())
 	
 	_table.append(row)
 

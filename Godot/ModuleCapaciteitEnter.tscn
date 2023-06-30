@@ -7,6 +7,7 @@ offset_right = 153.0
 offset_bottom = 31.0
 size_flags_horizontal = 3
 script = ExtResource("1_bn8i6")
+aantal = 0
 
 [node name="Label" type="Label" parent="."]
 unique_name_in_owner = true
@@ -18,4 +19,6 @@ text = "Module #: "
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+text = "0"
 placeholder_text = "∞"
+select_all_on_focus = true
