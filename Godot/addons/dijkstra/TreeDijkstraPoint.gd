@@ -6,7 +6,7 @@ var score := 0
 
 var disabled := false : get = is_disabled
 
-var all_children_are_worse := false
+var tree: TreeDijkstra
 
 var children: Array[TreeDijkstraPoint] = [] : get = get_children
 var parent: TreeDijkstraPoint : get = get_parent
@@ -28,17 +28,10 @@ func _freed() -> void:
 func find_best_child() -> TreeDijkstraPoint:
 	var best_child := self
 	
-	if all_children_are_worse:
-		return self
-	
 	for child in get_children() as Array[TreeDijkstraPoint]:
 		var child_best_child := child.find_best_child()
 		if child_best_child.is_better_than(best_child):
 			best_child = child_best_child
-	
-	if is_disabled() and best_child == self:
-		all_children_are_worse = true
-		return self
 	
 	return best_child
 
@@ -55,6 +48,10 @@ func is_better_than(check_point: TreeDijkstraPoint) -> bool:
 func add_child(child: TreeDijkstraPoint = TreeDijkstraPoint.new()) -> void:
 	child.parent = self
 	children.append(child)
+
+
+func disable() -> void:
+	disabled = true
 
 
 func is_disabled() -> bool:

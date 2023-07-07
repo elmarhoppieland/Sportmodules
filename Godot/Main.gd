@@ -17,6 +17,8 @@ var leerlingen := {}
 @onready var side_v_box_container: VBoxContainer = %SideVBoxContainer
 @onready var dijkstra := %Dijkstra as Dijkstra
 # ==============================================================================
+signal indelingen_gegenereerd(indelingen: Array[Dijkstra.Indeling])
+# ==============================================================================
 
 func _process(_delta: float) -> void:
 	if Input.is_action_just_pressed("paste"):
@@ -97,6 +99,8 @@ func _load_table_from_clipboard() -> void:
 	for child in _table_grid.get_children():
 		child.queue_free()
 	
+	sporten_list.clear()
+	
 	var table := clipboard_get_table()
 	
 	side_v_box_container.propagate_call("show")
@@ -164,21 +168,37 @@ func _on_clipboard_button_pressed() -> void:
 
 
 func _on_genereer_button_pressed() -> void:
-	var thread := AutoThread.new(self)
 	var indelingen: Array[Dijkstra.Indeling] = []
-	thread.start_execution(func():
-		LoadingScreen.start(sporten_list.size(), "Indeling genereren voor periode 1...")
-		
-		var capaciteiten: Array[PackedInt32Array] = []
-		
-		var sport_index := 0
-		for periode in sporten_list.size():
-			capaciteiten.append(PackedInt32Array())
-			for i in sporten_list[periode].size():
-				capaciteiten[-1].append(capaciteit_enter_nodes[sport_index].aantal)
-				sport_index += 1
-		
-		for periode in sporten_list.size():
+	
+#	var thread := Thread.new()
+#	thread.start(_genereer_indelingen.bind(indelingen), Thread.PRIORITY_NORMAL)
+#	await indelingen_gegenereerd
+#	thread.wait_to_finish()
+	
+	_genereer_indelingen(indelingen)
+	await indelingen_gegenereerd
+	
+	_load_table_from_indelingen(indelingen)
+
+
+func _genereer_indelingen(output: Array[Dijkstra.Indeling]) -> void:
+	LoadingScreen.start(sporten_list.size(), "Indeling genereren voor periode 1...", leerlingen[0].size())
+	
+	print_rich("[color=aqua]Aantal periodes: %s[/color]" % sporten_list.size())
+	
+	var capaciteiten: Array[PackedInt32Array] = []
+	
+	var sport_index := 0
+	for periode in sporten_list.size():
+		capaciteiten.append(PackedInt32Array())
+		for i in sporten_list[periode].size():
+			capaciteiten[-1].append(capaciteit_enter_nodes[sport_index].aantal)
+			sport_index += 1
+	
+	for periode in sporten_list.size():
+		var thread := AutoThread.new(self)
+		thread.start_execution(func():
+			LoadingScreen.set_step_count_secondary(leerlingen[periode].size(), true)
 			var module_caps := capaciteiten[periode]
 			print("Sporten: %s" % [sporten_list[periode]])
 			print("Caps: %s" % module_caps)
@@ -186,6 +206,7 @@ func _on_genereer_button_pressed() -> void:
 			var students := Dijkstra.get_student_array(leerlingen[periode], sporten_list[periode])
 			seed(0) # make sure shuffle() always does the same
 			students.shuffle()
+			
 			var indeling := dijkstra.run_algorithm(students, module_caps)
 			
 			var score := 0
@@ -207,15 +228,18 @@ func _on_genereer_button_pressed() -> void:
 				
 				print("Module %s heeft %s leerlingen: %s" % [module_idx, module.size(), keuzes])
 			
-			indelingen.append(indeling)
+			output.append(indeling)
 			
 			LoadingScreen.progress_increment()
 			LoadingScreen.set_message("Indeling genereren voor periode %s..." % (periode + 2))
-	)
+		)
+		print("t1")
+		await thread.finished
+		print("t2")
+		await dijkstra.finished_cleanup
+		print("t3")
 	
-	await thread.finished
-	
-	_load_table_from_indelingen(indelingen)
+	indelingen_gegenereerd.emit()
 
 
 func _load_table_from_indelingen(indelingen: Array[Dijkstra.Indeling]) -> void:
@@ -243,13 +267,23 @@ func _load_table_from_indelingen(indelingen: Array[Dijkstra.Indeling]) -> void:
 			if row.all(func(a: String): return a.is_empty()):
 				var clipboard := ""
 				
+				var file := FileAccess.open("user://indeling.csv", FileAccess.WRITE)
+				if not file:
+					push_error("Error while opening 'indeling.csv': %s" % error_string(FileAccess.get_open_error()))
+				
 				for table_row in table.rows():
 					clipboard += "\t".join(table_row)
 					clipboard += "\r\n"
+					if file:
+						file.store_csv_line(table_row, ";")
 				
 				DisplayServer.clipboard_set(clipboard)
 				
+				if file:
+					OS.shell_open(ProjectSettings.globalize_path("user://indeling.csv"))
+				
 				show_table(table)
+				
 				return
 			table.append_row(row)
 		leerling_index += 1

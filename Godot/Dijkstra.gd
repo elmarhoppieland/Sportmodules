@@ -5,6 +5,14 @@ class_name Dijkstra
 var students: Array[Student] = []
 var module_caps: PackedInt32Array = []
 # ==============================================================================
+signal finished(indeling: Indeling)
+# ==============================================================================
+
+func _ready() -> void:
+	algorithm_step.connect(func(best_point: TreeDijkstraPoint):
+		LoadingScreen.progress_set_secondary(best_point.get_meta("student") + 1)
+	)
+
 
 func run_algorithm(_students: Array[Student], _module_caps: PackedInt32Array) -> Indeling:
 	if _students.is_empty() or _module_caps.is_empty():
@@ -20,20 +28,12 @@ func run_algorithm(_students: Array[Student], _module_caps: PackedInt32Array) ->
 	empty_module_sizes.resize(module_caps.size())
 	root.set_meta("module_sizes", empty_module_sizes)
 	
-	var r := run()
+	print_rich("[color=aqua]Starting algorithm...[/color]")
+	var path := run()
+	print_rich("[color=aqua]Finished algorithm.[/color]")
 	
-	var indeling := Indeling.new()
-	for i in module_caps.size():
-		indeling.modules.append(Module.new())
-	
-	for point in r:
-		if point == root:
-			continue
-		
-		var student_idx: int = point.get_meta("student")
-		if student_idx < students.size():
-			indeling.modules[point.get_meta("module")].append(students[student_idx])
-	
+	var indeling := get_indeling_from_path(path)
+	finished.emit(indeling)
 	return indeling
 
 
@@ -86,6 +86,22 @@ static func get_student_array(leerlingen: Array[Leerling], modules: PackedString
 		students.append(Student.new(keuzes, leerling.klas, leerling.voornaam, leerling.achternaam))
 	
 	return students
+
+
+func get_indeling_from_path(path: Array[TreeDijkstraPoint]) -> Indeling:
+	var indeling := Indeling.new()
+	for i in module_caps.size():
+		indeling.modules.append(Module.new())
+	
+	for point in path:
+		if point == root:
+			continue
+		
+		var student_idx: int = point.get_meta("student")
+		if student_idx < students.size():
+			indeling.modules[point.get_meta("module")].append(students[student_idx])
+	
+	return indeling
 
 
 static func get_score(choice_idx: int) -> int:

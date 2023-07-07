@@ -14,6 +14,8 @@ var root: TreeDijkstraPoint :
 var _no_getters := false
 # ==============================================================================
 signal finished_cleanup()
+signal finished_algorithm(path: Array[TreeDijkstraPoint])
+signal algorithm_step(best_point: TreeDijkstraPoint)
 # ==============================================================================
 
 func run() -> Array[TreeDijkstraPoint]:
@@ -25,13 +27,15 @@ func run() -> Array[TreeDijkstraPoint]:
 			push_error("Attempted to continue Dijkstra from a disabled point.")
 			return []
 		
+		algorithm_step.emit(point)
+		
 		if _check_terminate(point):
 			print("Finished Dijkstra algorithm after %s seconds." % ((Time.get_ticks_usec() - time) / 1e6))
 			return terminate(point)
 		
 		_create_new_points(point)
 		
-		point.disabled = true
+		point.disable()
 	
 	return []
 
@@ -65,6 +69,7 @@ func _get_next_point() -> TreeDijkstraPoint:
 
 func add_point(point: TreeDijkstraPoint, parent: TreeDijkstraPoint) -> void:
 	parent.add_child(point)
+	point.tree = self
 
 
 func _create_new_points(origin: TreeDijkstraPoint) -> void:
@@ -88,6 +93,10 @@ func terminate(end_point: TreeDijkstraPoint) -> Array[TreeDijkstraPoint]:
 			path.append(root)
 			path.reverse()
 			
+			print(1)
+			finished_algorithm.emit(path)
+			print(2)
+			
 			_handle_cleanup()
 			
 			return path
@@ -106,5 +115,6 @@ func _terminate() -> void:
 func _handle_cleanup() -> void:
 	await get_tree().process_frame
 	
+	root.free()
 	root = null
 	finished_cleanup.emit()
