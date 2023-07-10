@@ -168,15 +168,22 @@ func _on_clipboard_button_pressed() -> void:
 
 
 func _on_genereer_button_pressed() -> void:
+	var file := FileAccess.open("user://indeling.csv", FileAccess.WRITE)
+	if not file:
+		push_error("Error while opening 'indeling.csv': %s. Closing the file is recommended." % error_string(FileAccess.get_open_error()))
+		return
+	file.close()
+	file = null
+	
 	var indelingen: Array[Dijkstra.Indeling] = []
 	
-#	var thread := Thread.new()
-#	thread.start(_genereer_indelingen.bind(indelingen), Thread.PRIORITY_NORMAL)
-#	await indelingen_gegenereerd
-#	thread.wait_to_finish()
-	
-	_genereer_indelingen(indelingen)
+	var thread := Thread.new()
+	thread.start(_genereer_indelingen.bind(indelingen), Thread.PRIORITY_NORMAL)
 	await indelingen_gegenereerd
+	thread.wait_to_finish()
+	
+#	_genereer_indelingen(indelingen)
+#	await indelingen_gegenereerd
 	
 	_load_table_from_indelingen(indelingen)
 
@@ -197,17 +204,21 @@ func _genereer_indelingen(output: Array[Dijkstra.Indeling]) -> void:
 	
 	for periode in sporten_list.size():
 		var thread := AutoThread.new(self)
+		var finished := false
 		thread.start_execution(func():
 			LoadingScreen.set_step_count_secondary(leerlingen[periode].size(), true)
 			var module_caps := capaciteiten[periode]
-			print("Sporten: %s" % [sporten_list[periode]])
-			print("Caps: %s" % module_caps)
+			if OS.is_debug_build() and not Input.is_key_pressed(KEY_ALT):
+				print("Sporten: %s" % [sporten_list[periode]])
+				print("Caps: %s" % module_caps)
 			
 			var students := Dijkstra.get_student_array(leerlingen[periode], sporten_list[periode])
 			seed(0) # make sure shuffle() always does the same
 			students.shuffle()
 			
 			var indeling := dijkstra.run_algorithm(students, module_caps)
+			indeling.modules.make_read_only()
+			dijkstra.finished_cleanup.connect(func(): finished = true)
 			
 			var score := 0
 			for module_idx in indeling.size():
@@ -215,18 +226,20 @@ func _genereer_indelingen(output: Array[Dijkstra.Indeling]) -> void:
 				module.leerlingen.sort_custom(func(a: Dijkstra.Student, b: Dijkstra.Student):
 					return a.achternaam < b.achternaam
 				)
-				for leerling in module.leerlingen:
-					score += leerling.get_score(module_idx, module_caps.size())
+				if OS.is_debug_build() and not Input.is_key_pressed(KEY_ALT):
+					for leerling in module.leerlingen:
+						score += leerling.get_score(module_idx, module_caps.size())
 			
-			print("Score: " + str(score))
-			
-			for module_idx in indeling.size():
-				var module := indeling.modules[module_idx]
-				var keuzes: Array[PackedInt32Array] = []
-				for leerling in module.leerlingen:
-					keuzes.append(leerling.choices)
+			if OS.is_debug_build() and not Input.is_key_pressed(KEY_ALT):
+				print("Score: " + str(score))
 				
-				print("Module %s heeft %s leerlingen: %s" % [module_idx, module.size(), keuzes])
+				for module_idx in indeling.size():
+					var module := indeling.modules[module_idx]
+					var keuzes: Array[PackedInt32Array] = []
+					for leerling in module.leerlingen:
+						keuzes.append(leerling.choices)
+					
+					print("Module %s heeft %s leerlingen: %s" % [module_idx, module.size(), keuzes])
 			
 			output.append(indeling)
 			
@@ -236,7 +249,8 @@ func _genereer_indelingen(output: Array[Dijkstra.Indeling]) -> void:
 		print("t1")
 		await thread.finished
 		print("t2")
-		await dijkstra.finished_cleanup
+		if not finished:	
+			await dijkstra.finished_cleanup
 		print("t3")
 	
 	indelingen_gegenereerd.emit()
