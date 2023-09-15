@@ -44,7 +44,7 @@ func append_column(column: Array) -> void:
 		_table[i].append(value)
 
 
-## Appends 1 row and the end of the table.
+## Appends 1 row to the end of the table.
 func append_row(row: Array, resize: bool = false) -> void:
 	if row.size() != width() and not resize:
 		return

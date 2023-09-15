@@ -2,6 +2,8 @@ extends Node
 class_name TreeDijkstra
 
 # ==============================================================================
+@export var max_points := 100_000
+# ==============================================================================
 var root: TreeDijkstraPoint :
 	get:
 		if is_instance_valid(root) or _no_getters:
@@ -11,33 +13,64 @@ var root: TreeDijkstraPoint :
 		_no_getters = false
 		return root
 
+var canceled := false
+
 var _no_getters := false
+var _next_point_override: TreeDijkstraPoint
+
+var _point_count := 0
+var points: Array[TreeDijkstraPoint] = []
+var point_scores: Array[int] = []
 # ==============================================================================
 signal finished_cleanup()
 signal finished_algorithm(path: Array[TreeDijkstraPoint])
 signal algorithm_step(best_point: TreeDijkstraPoint)
 # ==============================================================================
 
-func run() -> Array[TreeDijkstraPoint]:
+## Runs the algorithm. Returns the created path as an [Array] of [TreeDijkstraPoint]s.
+func run() -> PackedByteArray:
 	var time := Time.get_ticks_usec()
 	
+	canceled = false
+	_next_point_override = null
+	
+	points = [root]
+	point_scores = [0]
+	
 	while true:
-		var point := get_next_point()
-		if point.is_disabled():
-			push_error("Attempted to continue Dijkstra from a disabled point.")
+		if canceled:
+			_handle_cleanup()
 			return []
 		
-		algorithm_step.emit(point)
+		var point := get_next_point()
+		
+#		if point.is_disabled():
+#			push_error("Attempted to continue Dijkstra from a disabled point.")
+#			return []
+		
+		(func():
+			algorithm_step.emit(point)
+		).call_deferred()
 		
 		if _check_terminate(point):
 			print("Finished Dijkstra algorithm after %s seconds." % ((Time.get_ticks_usec() - time) / 1e6))
 			return terminate(point)
 		
-		_create_new_points(point)
+		_next_point_override = null
 		
-		point.disable()
+		_get_point_children(point)
+		
+		var index := points.find(point)
+		points.remove_at(index)
+		point_scores.remove_at(index)
 	
 	return []
+
+
+## Cancels the algorithm, forcing [method run] to quit immediately and to return an empty [PackedByteArray].
+func cancel() -> void:
+	print("Queuing a cancel...")
+	canceled = true
 
 
 ## Creates a new [member root] and returns it. If there is already a root present,
@@ -57,22 +90,43 @@ func get_next_point() -> TreeDijkstraPoint:
 	if override:
 		return override
 	
+	if _next_point_override:
+		return _next_point_override
+	
+	return points[point_scores.find(point_scores.min())]
+	
 	return root.find_best_child()
 
 
 ## Virtual method. If this returns a value, this value will override the return
 ## value of [method get_next_point]. If this returns [code]null[/code], [method
-## get_next_point] will return the normal value.
+## get_next_point] will return the default value.
 func _get_next_point() -> TreeDijkstraPoint:
 	return null
 
 
-func add_point(point: TreeDijkstraPoint, parent: TreeDijkstraPoint) -> void:
-	parent.add_child(point)
-	point.tree = self
+func add_point(parent: TreeDijkstraPoint, score: int, idx: int, meta_values: Dictionary = {}) -> void:
+	var point := TreeDijkstraPoint.new()
+	
+	for identifier in meta_values:
+		parent.set_meta(identifier, meta_values[identifier])
+	
+	point.path = parent.path.duplicate()
+	point.path.append(idx)
+	
+	point.score = parent.score + score
+	
+	points.append(point)
+	point_scores.append(point.score)
+	
+	if score == 0:
+		_next_point_override = point
+	
+	if points.size() >= max_points:
+		cancel()
 
 
-func _create_new_points(origin: TreeDijkstraPoint) -> void:
+func _get_point_children(parent: TreeDijkstraPoint) -> void:
 	pass
 
 
@@ -81,8 +135,10 @@ func _check_terminate(_best_point: TreeDijkstraPoint) -> bool:
 	return true
 
 
-func terminate(end_point: TreeDijkstraPoint) -> Array[TreeDijkstraPoint]:
+func terminate(end_point: TreeDijkstraPoint, perform_cleanup: bool = true) -> PackedByteArray:
 	_terminate()
+	
+	return end_point.path
 	
 	var path: Array[TreeDijkstraPoint] = [end_point]
 	
@@ -93,17 +149,17 @@ func terminate(end_point: TreeDijkstraPoint) -> Array[TreeDijkstraPoint]:
 			path.append(root)
 			path.reverse()
 			
-			print(1)
-			finished_algorithm.emit(path)
-			print(2)
+			(func(): finished_algorithm.emit(path)).call_deferred()
 			
-			_handle_cleanup()
+			if perform_cleanup:
+				_handle_cleanup()
 			
 			return path
 		
 		path.append(start_point)
 	
-	_handle_cleanup()
+	if perform_cleanup:
+		_handle_cleanup()
 	
 	return path
 
@@ -113,8 +169,11 @@ func _terminate() -> void:
 
 
 func _handle_cleanup() -> void:
-	await get_tree().process_frame
-	
-	root.free()
 	root = null
-	finished_cleanup.emit()
+	
+	canceled = false
+	_point_count = 0
+	points.clear()
+	point_scores.clear()
+	
+	(func(): finished_cleanup.emit()).call_deferred()

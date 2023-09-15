@@ -4,13 +4,13 @@ class_name Dijkstra
 # ==============================================================================
 var students: Array[Student] = []
 var module_caps: PackedInt32Array = []
-# ==============================================================================
-signal finished(indeling: Indeling)
+
+var last_indeling: Indeling
 # ==============================================================================
 
 func _ready() -> void:
-	algorithm_step.connect(func(best_point: TreeDijkstraPoint):
-		LoadingScreen.progress_set_secondary(best_point.get_meta("student") + 1)
+	algorithm_step.connect(func _on_algorithm_step(best_point: TreeDijkstraPoint):
+		LoadingScreen.progress_set_secondary(best_point.path.size())
 	)
 
 
@@ -22,57 +22,43 @@ func run_algorithm(_students: Array[Student], _module_caps: PackedInt32Array) ->
 	students = _students
 	module_caps = _module_caps
 	
-	root.set_meta("student", -1)
-	
-	var empty_module_sizes: PackedInt32Array = []
-	empty_module_sizes.resize(module_caps.size())
-	root.set_meta("module_sizes", empty_module_sizes)
-	
 	print_rich("[color=aqua]Starting algorithm...[/color]")
-	var path := run()
+	run()
 	print_rich("[color=aqua]Finished algorithm.[/color]")
 	
-	var indeling := get_indeling_from_path(path)
-	finished.emit(indeling)
-	return indeling
+	return last_indeling
 
 
-func _create_new_points(origin: TreeDijkstraPoint) -> void:
-	if origin.is_disabled():
-		push_error("Attempted to create new points from a disabled origin.")
-		return
-	if origin.get_child_count():
-		push_error("Attempted to create new points from a used origin.")
-		return
-	
-	var student_idx: int = origin.get_meta("student") + 1
+func _get_point_children(parent: TreeDijkstraPoint) -> void:
+	var student_idx: int = parent.path.size()
 	var student := students[student_idx]
 	
 	for module_idx in module_caps.size():
-		if origin.get_meta("module_sizes")[module_idx] >= module_caps[module_idx]:
+		if parent.path.count(module_idx) >= module_caps[module_idx]:
 			continue
 		
-		var point := TreeDijkstraPoint.new()
+		var score := student.get_score(module_idx, module_caps.size() - 1)
 		
-		point.score = student.get_score(module_idx, module_caps.size() - 1)
-		
-		point.set_meta("student", student_idx)
-		
-		point.set_meta("module_sizes", origin.get_meta("module_sizes").duplicate())
-		point.get_meta("module_sizes")[module_idx] += 1
-		
-		point.set_meta("module", module_idx)
-		
-		add_point(point, origin)
+		add_point(parent, score, module_idx)
 
 
 func _check_terminate(best_point: TreeDijkstraPoint) -> bool:
-	return best_point.get_meta("student") + 1 >= students.size()
+	return best_point.path.size() >= students.size()
+
+
+func terminate(final_point: TreeDijkstraPoint, perform_cleanup: bool = true) -> PackedByteArray:
+	var path := super(final_point, false)
+	
+	last_indeling = get_indeling_from_path(final_point.path)
+	
+	if perform_cleanup:
+		_handle_cleanup()
+	
+	return path
 
 
 static func get_student_array(leerlingen: Array[Leerling], modules: PackedStringArray) -> Array[Student]:
-	@warning_ignore("shadowed_variable")
-	var students: Array[Student] = []
+	var student_array: Array[Student] = []
 	
 	for leerling in leerlingen:
 		var keuzes: PackedInt32Array = []
@@ -83,23 +69,21 @@ static func get_student_array(leerlingen: Array[Leerling], modules: PackedString
 		if keuzes.is_empty():
 			continue
 		
-		students.append(Student.new(keuzes, leerling.klas, leerling.voornaam, leerling.achternaam))
+		student_array.append(Student.new(keuzes, leerling.klas, leerling.voornaam, leerling.achternaam))
 	
-	return students
+	return student_array
 
 
-func get_indeling_from_path(path: Array[TreeDijkstraPoint]) -> Indeling:
+func get_indeling_from_path(path: PackedByteArray) -> Indeling:
 	var indeling := Indeling.new()
 	for i in module_caps.size():
 		indeling.modules.append(Module.new())
 	
-	for point in path:
-		if point == root:
-			continue
+	for i in path.size():
+		var module_idx := path[i]
 		
-		var student_idx: int = point.get_meta("student")
-		if student_idx < students.size():
-			indeling.modules[point.get_meta("module")].append(students[student_idx])
+		if i < students.size():
+			indeling.modules[module_idx].append(students[i])
 	
 	return indeling
 
@@ -126,6 +110,10 @@ class Student extends RefCounted:
 			return Dijkstra.get_score(choices.find(module_idx))
 		else:
 			return Dijkstra.get_score(fallback_idx)
+	
+	
+	func _to_string() -> String:
+		return "%s - %s %s" % [klas, voornaam, achternaam]
 
 
 class Module extends RefCounted:
