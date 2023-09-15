@@ -2,8 +2,6 @@ extends Node
 class_name TreeDijkstra
 
 # ==============================================================================
-@export var max_points := 100_000
-# ==============================================================================
 var root: TreeDijkstraPoint :
 	get:
 		if is_instance_valid(root) or _no_getters:
@@ -121,9 +119,6 @@ func add_point(parent: TreeDijkstraPoint, score: int, idx: int, meta_values: Dic
 	
 	if score == 0:
 		_next_point_override = point
-	
-	if points.size() >= max_points:
-		cancel()
 
 
 func _get_point_children(parent: TreeDijkstraPoint) -> void:
